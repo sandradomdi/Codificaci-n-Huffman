@@ -4,9 +4,7 @@ import sun.jvm.hotspot.utilities.Bits
 object CodigoHuffman
 
   abstract class ArbolHuffman
-    //def peso: Int
 
-    //def caracter: List[Char]
 
   case class RamaHuff(izq: ArbolHuffman, der: ArbolHuffman) extends ArbolHuffman
 
@@ -35,14 +33,14 @@ object CodigoHuffman
   type Bit = 0 | 1
 
   def decodificar(arbol: ArbolHuffman)(bits: List[Bit]): String =
-    def decodificarAux(arbol: ArbolHuffman)(bits: List[Bit])(accum: List[Char]): List[Char] = bits match
-      case Nil => arbol match
+    def decodificarAux(arbol: ArbolHuffman, actual:ArbolHuffman)(bits: List[Bit])(accum: List[Char]): List[Char] = bits match
+      case Nil => actual match
         case h: HojaHuff => accum :+ h.caracter
         case r: RamaHuff => accum
-      case x ::xs  => arbol match
-        case h: HojaHuff => decodificarAux(arbol)( bits)( accum :+ h.caracter)
-        case r: RamaHuff => decodificarAux(if (x == 0) r.izq else r.der)( xs)(accum)
-    listaCharsACadena(decodificarAux(arbol)(bits)(Nil))
+      case x :: xs  => actual match
+        case h: HojaHuff => decodificarAux(arbol,arbol)(bits)(accum :+ h.caracter)
+        case r: RamaHuff => decodificarAux(arbol,if (x == 0) r.izq else r.der)(xs)(accum)
+    listaCharsACadena(decodificarAux(arbol,arbol)(bits)(Nil))
 
 
 val s = HojaHuff('s', 4)
@@ -52,15 +50,26 @@ val esp = HojaHuff(' ', 2)
 val rama4 = RamaHuff(e,esp)
 val rama7 = RamaHuff(o,rama4)
 val rama11 = RamaHuff(s,rama7)
-
+//     (11)
+//    /   \
+// (s|4)  (7)
+//       /   \
+//     (o|3) (4)
+//           /  \
+//        (e|2) ( |2)
 
 val Int = peso(rama11)
 caracteres(rama11)
 listaCharsACadena(caracteres(rama11))
+listaCharsACadena(List('a','b'))
 cadenaAListaChars("soe ")
 
 val bitList: List[Bit] = List(0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 0)
+//sos ese oso
+val b: List[Bit] = List(0,1,0,1,1,0)
 decodificar(rama11)(bitList)
+decodificar(rama11)(b)
+
 
 
 
