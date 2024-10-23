@@ -70,6 +70,32 @@ val b: List[Bit] = List(0,1,0,1,1,0)
 decodificar(rama11)(bitList)
 decodificar(rama11)(b)
 
+def caracterEnArbol(arbol:ArbolHuffman, caracter:Char):Boolean =
+  def caracterEnArbolAux(arbol:ArbolHuffman, caracter:Char):Boolean = arbol match
+    case h:HojaHuff => if h.caracter == caracter then true else false
+    case r:RamaHuff => caracterEnArbolAux(r.izq,caracter) | caracterEnArbolAux(r.der,caracter)
+  caracterEnArbolAux(arbol,caracter)
+
+val prueba = caracterEnArbol(rama11,'s')
+
+
+
+
+def codificar(arbol:ArbolHuffman)(cadena:String):List[Bits]=
+  var lista:List[Char]=cadenaAListaChars(cadena)
+  def codificarAux(arbol:ArbolHuffman, actual:ArbolHuffman)(listaChar:List[Char])(accum:List[Bit]):List[Bit] = listaChar match
+    case Nil => accum
+    case cabeza :: cola => actual match
+      case h:HojaHuff => codificarAux(arbol, arbol)(cola)(accum)
+      case r:RamaHuff => if caracterEnArbol(r.izq,cabeza) then codificarAux(arbol, r.izq)(cola)(0::accum)
+                         else if  caracterEnArbol(r.der,cabeza) then codificarAux(arbol, r.der)(cola)(1::accum)
+                         else throw new Error("El caracter no se encuentra en el arbol")
+
+  codificarAux(arbol,arbol)(lista)(Nil)
+
+
+
+
 
 
 
