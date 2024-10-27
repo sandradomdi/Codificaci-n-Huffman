@@ -2,6 +2,18 @@ type Bit = 0 | 1
 def cadenaAListaChars(cadena: String): List[Char] = cadena.toList
 def listaCharsACadena(listaCar: List[Char]): String = listaCar.mkString
 
+
+def listaCharsADistFrec(listaChar: List[Char]): List[(Char,Int)] =
+  def listaCharsADistFrecAux (listaAux:List[Char], listaAux2:List[Char], caracter:Char, frecuencia:Int, accum:List[(Char,Int)]): List[(Char,Int)] = listaAux match
+    case Nil => accum.toSet.toList //elimino los elementos repetidos
+    case cabeza :: cola => listaAux2 match
+      case Nil => listaCharsADistFrecAux(listaAux.tail, listaChar, listaAux.head, 0, (caracter,frecuencia)::accum) //cambio el caracter y guardo el caracter con su frecuencia anterior
+      case cabeza :: cola => if cabeza == caracter then listaCharsADistFrecAux(listaAux, cola, caracter, frecuencia+1, accum) //mantengo caracter y voy recorriendo la lista
+                             else listaCharsADistFrecAux(listaAux,cola, caracter, frecuencia, accum)
+
+  listaCharsADistFrecAux(listaChar,listaChar,listaChar.head,0,Nil)
+
+
 abstract class ArbolHuffman {
   def peso:Int = this match
     case RamaHuffman(i,d) => i.peso + d.peso
@@ -40,6 +52,17 @@ abstract class ArbolHuffman {
                                  else throw new Error("El caracter no se encuentra en el arbol")
 
     codificarAux(this,this, lista, Nil)
+
+
+  //CONSTRUCCIÓN DEL ÁLBOL
+  def distribFrecListaHojas(frec:List[(Char,Int)]):List[HojaHuffman] =
+    def distribFrecListaHojasAux(frec:List[(Char,Int)], listaHojas:List[HojaHuffman]):List[HojaHuffman] = frec match
+      case Nil => listaHojas
+      case cabeza :: cola => distribFrecListaHojasAux(cola, HojaHuffman(frec.head._1,frec.head._2)::listaHojas)
+
+    distribFrecListaHojasAux(frec, Nil)
+  //Falta ponerlo en orden creciente
+
 }
 case class RamaHuffman(izq:ArbolHuffman, der:ArbolHuffman) extends ArbolHuffman {
 
@@ -81,4 +104,12 @@ object miPrograma extends App{
   //prueba de la funcion Codificar
   println(rama11.codificar("sos ese oso"))
   println(rama11.codificar("soe s"))
+
+  val lista = List(1, 2, 3, 2, 4, 1, 5, 3,7)
+  val listaSinRepetidos = lista.toSet.toList
+  println(listaSinRepetidos)
+
+  val listac = List('o','u',' ','o','u','o',' ')
+  println(listaCharsADistFrec(listac))
+  println(rama11.distribFrecListaHojas(listaCharsADistFrec(listac)))
 }
