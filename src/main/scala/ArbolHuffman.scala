@@ -13,6 +13,13 @@ def listaCharsADistFrec(listaChar: List[Char]): List[(Char,Int)] =
 
   listaCharsADistFrecAux(listaChar,listaChar,listaChar.head,0,Nil)
 
+//Función hecha para despues poder ordenar las hojas de forma decreciente
+def cambiarAIntChar(listaCharInt: List[(Char, Int)]):List[(Int, Char)] =
+  def cambiarAIntCharAux(listaCharInt:List[(Char, Int)], listaIntChar: List[(Int, Char)]):List[(Int, Char)] = listaCharInt match
+    case Nil => listaIntChar
+    case cabeza :: cola => cambiarAIntCharAux(cola, (listaCharInt.head._2,listaCharInt.head._1)::listaIntChar)
+
+  cambiarAIntCharAux(listaCharInt, Nil)
 
 abstract class ArbolHuffman {
   def peso:Int = this match
@@ -55,13 +62,14 @@ abstract class ArbolHuffman {
 
 
   //CONSTRUCCIÓN DEL ÁLBOL
-  def distribFrecListaHojas(frec:List[(Char,Int)]):List[HojaHuffman] =
-    def distribFrecListaHojasAux(frec:List[(Char,Int)], listaHojas:List[HojaHuffman]):List[HojaHuffman] = frec match
-      case Nil => listaHojas
-      case cabeza :: cola => distribFrecListaHojasAux(cola, HojaHuffman(frec.head._1,frec.head._2)::listaHojas)
 
-    distribFrecListaHojasAux(frec, Nil)
-  //Falta ponerlo en orden creciente
+  def distribFrecListaHojas(frec:List[(Char,Int)]):List[HojaHuffman] =
+    val frecNuevo = cambiarAIntChar(frec) //Hecho para poder ordenar las hojas de forma decreciente segun sus frecuencias
+    def distribFrecListaHojasAux(frec:List[(Int,Char)], listaHojas:List[HojaHuffman]):List[HojaHuffman] = frec match
+      case Nil => listaHojas
+      case cabeza :: cola => distribFrecListaHojasAux(cola, HojaHuffman(frec.head._2,frec.head._1)::listaHojas)
+
+    distribFrecListaHojasAux(frecNuevo.sorted, Nil)//.sorted ordena la lista en función de las frecuencias de forma decreciente
 
 }
 case class RamaHuffman(izq:ArbolHuffman, der:ArbolHuffman) extends ArbolHuffman {
@@ -109,7 +117,7 @@ object miPrograma extends App{
   val listaSinRepetidos = lista.toSet.toList
   println(listaSinRepetidos)
 
-  val listac = List('o','u',' ','o','u','o',' ')
+  val listac = List('o','u',' ','o','u','o','o')
   println(listaCharsADistFrec(listac))
   println(rama11.distribFrecListaHojas(listaCharsADistFrec(listac)))
 }
