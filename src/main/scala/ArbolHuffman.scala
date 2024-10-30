@@ -3,23 +3,6 @@ def cadenaAListaChars(cadena: String): List[Char] = cadena.toList
 def listaCharsACadena(listaCar: List[Char]): String = listaCar.mkString
 
 
-def listaCharsADistFrec(listaChar: List[Char]): List[(Char,Int)] =
-  def listaCharsADistFrecAux (listaAux:List[Char], listaAux2:List[Char], caracter:Char, frecuencia:Int, accum:List[(Char,Int)]): List[(Char,Int)] = listaAux match
-    case Nil => accum.toSet.toList //elimino los elementos repetidos
-    case cabeza :: cola => listaAux2 match
-      case Nil => listaCharsADistFrecAux(listaAux.tail, listaChar, listaAux.head, 0, (caracter,frecuencia)::accum) //cambio el caracter y guardo el caracter con su frecuencia anterior
-      case cabeza :: cola => if cabeza == caracter then listaCharsADistFrecAux(listaAux, cola, caracter, frecuencia+1, accum) //mantengo caracter y voy recorriendo la lista
-                             else listaCharsADistFrecAux(listaAux,cola, caracter, frecuencia, accum)
-
-  listaCharsADistFrecAux(listaChar,listaChar,listaChar.head,0,Nil)
-
-//Función hecha para despues poder ordenar las hojas de forma decreciente
-def cambiarAIntChar(listaCharInt: List[(Char, Int)]):List[(Int, Char)] =
-  def cambiarAIntCharAux(listaCharInt:List[(Char, Int)], listaIntChar: List[(Int, Char)]):List[(Int, Char)] = listaCharInt match
-    case Nil => listaIntChar
-    case cabeza :: cola => cambiarAIntCharAux(cola, (listaCharInt.head._2,listaCharInt.head._1)::listaIntChar)
-
-  cambiarAIntCharAux(listaCharInt, Nil)
 
 abstract class ArbolHuffman {
   def peso:Int = this match
@@ -61,15 +44,10 @@ abstract class ArbolHuffman {
     codificarAux(this,this, lista, Nil)
 
 
-  //CONSTRUCCIÓN DEL ÁLBOL
 
-  def distribFrecListaHojas(frec:List[(Char,Int)]):List[HojaHuffman] =
-    val frecNuevo = cambiarAIntChar(frec) //Hecho para poder ordenar las hojas de forma decreciente segun sus frecuencias
-    def distribFrecListaHojasAux(frec:List[(Int,Char)], listaHojas:List[HojaHuffman]):List[HojaHuffman] = frec match
-      case Nil => listaHojas
-      case cabeza :: cola => distribFrecListaHojasAux(cola, HojaHuffman(frec.head._2,frec.head._1)::listaHojas)
 
-    distribFrecListaHojasAux(frecNuevo.sorted, Nil)//.sorted ordena la lista en función de las frecuencias de forma decreciente
+
+
 
 }
 case class RamaHuffman(izq:ArbolHuffman, der:ArbolHuffman) extends ArbolHuffman {
@@ -79,6 +57,55 @@ case class RamaHuffman(izq:ArbolHuffman, der:ArbolHuffman) extends ArbolHuffman 
 case class HojaHuffman(caracter:Char, frecuencia:Int) extends ArbolHuffman{
 
 }
+//CONSTRUCCIÓN DEL ÁLBOL
+
+
+def listaCharsADistFrec(listaChar: List[Char]): List[(Char,Int)] = //PROBLEMA EN listaAux2 match  case Nil => listaCharsADistFrecAux(listaAux.tail, POR PONER LISTAAUX.TAIL EL FINAL NO LO HACE BIEN
+  def listaCharsADistFrecAux (listaAux:List[Char], listaAux2:List[Char], caracter:Char, frecuencia:Int, accum:List[(Char,Int)]): List[(Char,Int)] = listaAux match
+    case Nil => accum.toSet.toList //elimino los elementos repetidos
+    case List(x) => listaAux2 match
+      case Nil => ((caracter,frecuencia)::accum).toSet.toList
+      case cabeza1 :: cola1 => if cabeza1 == caracter then listaCharsADistFrecAux(listaAux, cola1, caracter, frecuencia+1, accum) //mantengo caracter y voy recorriendo la lista
+                             else listaCharsADistFrecAux(listaAux,cola1, caracter, frecuencia, accum)
+    case cabeza :: cola => listaAux2 match
+      case Nil => listaCharsADistFrecAux(listaAux.tail, listaChar, cola.head, 0, (caracter,frecuencia)::accum) //cambio el caracter y guardo el caracter con su frecuencia anterior
+      case cabeza2 :: cola2 => if cabeza2 == caracter then listaCharsADistFrecAux(listaAux, cola2, caracter, frecuencia+1, accum) //mantengo caracter y voy recorriendo la lista
+                             else listaCharsADistFrecAux(listaAux,cola2, caracter, frecuencia, accum)
+
+  listaCharsADistFrecAux(listaChar,listaChar,listaChar.head,0,Nil)
+
+//Función hecha para despues poder ordenar las hojas de forma decreciente
+def cambiarAIntChar(listaCharInt: List[(Char, Int)]):List[(Int, Char)] =
+  def cambiarAIntCharAux(listaCharInt:List[(Char, Int)], listaIntChar: List[(Int, Char)]):List[(Int, Char)] = listaCharInt match
+    case Nil => listaIntChar
+    case cabeza :: cola => cambiarAIntCharAux(cola, (listaCharInt.head._2,listaCharInt.head._1)::listaIntChar)
+
+  cambiarAIntCharAux(listaCharInt, Nil)
+def distribFrecListaHojas(frec:List[(Char,Int)]):List[HojaHuffman] =
+  val frecNuevo = cambiarAIntChar(frec) //Hecho para poder ordenar las hojas de forma decreciente segun sus frecuencias
+  def distribFrecListaHojasAux(frec:List[(Int,Char)], listaHojas:List[HojaHuffman]):List[HojaHuffman] = frec match
+    case Nil => listaHojas
+    case cabeza :: cola => distribFrecListaHojasAux(cola, HojaHuffman(frec.head._2,frec.head._1)::listaHojas)
+
+  distribFrecListaHojasAux(frecNuevo.sorted, Nil)//.sorted ordena la lista en función de las frecuencias de forma decreciente
+
+//Funcion auxiliar para creación arbol codificado a partir de la lista de hojas
+def creaRamaHuff(izq: ArbolHuffman, dch:ArbolHuffman):RamaHuffman =
+  RamaHuffman(izq, dch)
+
+def combinar(nodos: List[ArbolHuffman]): List[ArbolHuffman] =
+  def combinarAux(nodos: List[ArbolHuffman], listaFinal:List[ArbolHuffman]): List[ArbolHuffman] = nodos match
+    case Nil => listaFinal
+    case List(x) => (nodos.head :: listaFinal).reverse
+    case cabeza :: cola => combinarAux(nodos.tail.tail, creaRamaHuff(nodos.head, cola.head) :: listaFinal)
+  combinarAux(nodos, Nil)
+
+
+
+
+def esListaSingleton (lista: List[ArbolHuffman]): Boolean = lista.length == 1
+
+
 object miPrograma extends App{
   val s = HojaHuffman('s', 4)
   val o = HojaHuffman('o', 3)
@@ -117,7 +144,14 @@ object miPrograma extends App{
   val listaSinRepetidos = lista.toSet.toList
   println(listaSinRepetidos)
 
-  val listac = List('o','u',' ','o','u','o','o')
+  val listac = List('o','u',' ','o','u','o','o','i','a')
+  val lista2 = List('o','i','u','u')
+  println(listaCharsADistFrec(lista2))
   println(listaCharsADistFrec(listac))
-  println(rama11.distribFrecListaHojas(listaCharsADistFrec(listac)))
+  println(distribFrecListaHojas(listaCharsADistFrec(listac)))
+  println(creaRamaHuff(s,o))
+  println(combinar(distribFrecListaHojas(listaCharsADistFrec(listac))))
+  println(esListaSingleton(List(s)))
+  println(esListaSingleton(List()))
+  println(esListaSingleton(List(s,o,e)))
 }
