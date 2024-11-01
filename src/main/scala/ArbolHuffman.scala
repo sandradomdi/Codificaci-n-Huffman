@@ -1,6 +1,7 @@
 type Bit = 0 | 1
 def cadenaAListaChars(cadena: String): List[Char] = cadena.toList
 def listaCharsACadena(listaCar: List[Char]): String = listaCar.mkString
+type TablaCodigos = List[(Char,List[Byte])]
 
 
 
@@ -87,7 +88,7 @@ def distribFrecListaHojas(frec:List[(Char,Int)]):List[HojaHuffman] =
     case Nil => listaHojas
     case cabeza :: cola => distribFrecListaHojasAux(cola, HojaHuffman(frec.head._2,frec.head._1)::listaHojas)
 
-  distribFrecListaHojasAux(frecNuevo.sorted, Nil)//.sorted ordena la lista en función de las frecuencias de forma decreciente
+  distribFrecListaHojasAux(frecNuevo.sorted.reverse, Nil)//.sorted ordena la lista en función de las frecuencias de forma decreciente y lo cambiamos a creciente
 
 //Funcion auxiliar para creación arbol codificado a partir de la lista de hojas
 def creaRamaHuff(izq: ArbolHuffman, dch:ArbolHuffman):RamaHuffman =
@@ -104,6 +105,23 @@ def combinar(nodos: List[ArbolHuffman]): List[ArbolHuffman] =
 
 
 def esListaSingleton (lista: List[ArbolHuffman]): Boolean = lista.length == 1
+
+
+def repetirHasta(accion: List[ArbolHuffman] => List[ArbolHuffman],condicion: List[ArbolHuffman] => Boolean): List[ArbolHuffman] => List[ArbolHuffman] = list =>
+  if(condicion(list)) list else repetirHasta(accion, condicion)(accion(list))
+
+def crearArbolHuffman(cadena:String): ArbolHuffman = repetirHasta(combinar,esListaSingleton)(distribFrecListaHojas(listaCharsADistFrec(cadenaAListaChars(cadena)))).head
+
+
+object ArbolHuffman
+  def apply(cadena: String):ArbolHuffman = crearArbolHuffman(cadena)
+
+
+
+
+
+
+
 
 
 object miPrograma extends App{
@@ -146,12 +164,22 @@ object miPrograma extends App{
 
   val listac = List('o','u',' ','o','u','o','o','i','a')
   val lista2 = List('o','i','u','u')
+  println("lista chars a dist frec")
   println(listaCharsADistFrec(lista2))
   println(listaCharsADistFrec(listac))
+  println("distrib frec list hojas")
   println(distribFrecListaHojas(listaCharsADistFrec(listac)))
+  println("crea rama")
   println(creaRamaHuff(s,o))
+  println("combinar")
   println(combinar(distribFrecListaHojas(listaCharsADistFrec(listac))))
+  println("es lista singleton")
   println(esListaSingleton(List(s)))
   println(esListaSingleton(List()))
   println(esListaSingleton(List(s,o,e)))
+
+  println("crearArbolHuffman")
+
+  println(crearArbolHuffman(" sseeee     ttttttth"))
+
 }
