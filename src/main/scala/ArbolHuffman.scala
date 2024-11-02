@@ -1,7 +1,7 @@
 type Bit = 0 | 1
 def cadenaAListaChars(cadena: String): List[Char] = cadena.toList
 def listaCharsACadena(listaCar: List[Char]): String = listaCar.mkString
-type TablaCodigos = List[(Char,List[Byte])]
+type TablaCodigos = List[(Char,List[Bit])]
 
 
 
@@ -112,9 +112,52 @@ def repetirHasta(accion: List[ArbolHuffman] => List[ArbolHuffman],condicion: Lis
 
 def crearArbolHuffman(cadena:String): ArbolHuffman = repetirHasta(combinar,esListaSingleton)(distribFrecListaHojas(listaCharsADistFrec(cadenaAListaChars(cadena)))).head
 
+/***
+def deArbolATabla(arbol: ArbolHuffman): TablaCodigos =
+  def deArbolATablaAux(arbol: ArbolHuffman, tabla: TablaCodigos): TablaCodigos = arbol match
+    case RamaHuffman(izq, der) => deArbolATablaAux(izq,tabla):::(deArbolATablaAux(der,tabla) )
+    case HojaHuffman(caracter, frecuencia) => tabla:::List[(caracter,frecuencia)]*/
+def deArbolATabla(arbol: ArbolHuffman): TablaCodigos =
+  var lista: List[Char] = arbol.caracteres
+  def deArbolATablaAux(arbol:ArbolHuffman, arbolAux: ArbolHuffman, tabla: TablaCodigos,listaChar:List[Char], accum: List[Bit]): TablaCodigos = listaChar match
+    case Nil => tabla.reverse
+    case cabeza :: cola => arbolAux match
+      case HojaHuffman(char, frec) => deArbolATablaAux(arbol, arbol, (cabeza,accum.reverse)::tabla,cola, Nil)
+      case RamaHuffman(i, d) => if i.caracterEnArbol(cabeza) then deArbolATablaAux(arbol, i,tabla, listaChar, 0 :: accum)
+                                else if d.caracterEnArbol(cabeza) then deArbolATablaAux(arbol, d,tabla,listaChar, 1 :: accum)
+                                else throw new Error("El caracter no se encuentra en el arbol")
+
+  deArbolATablaAux(arbol, arbol,Nil, lista, Nil)
+
+def codificar(tabla:TablaCodigos)(cadena:String): List[Bit]=
+  val list: List[Char]= cadenaAListaChars(cadena)
+  def codificarAux(tabla: TablaCodigos,tablaAux:TablaCodigos)(lista:List[Char],accum: List[Bit]):List[Bit]= lista match
+    case Nil => accum
+    case cabeza :: cola => tablaAux match
+      case Nil => throw new Error("ese elemento no se encuentra en la tabla")
+      case cabeza2 :: cola2 => if cabeza == cabeza2._1 then codificarAux(tabla, tabla)(cola, accum:::cabeza2._2)
+                                else codificarAux(tabla,cola2)(lista,accum)
+  codificarAux(tabla, tabla)(list,Nil)
+
+def decodificar(tabla:TablaCodigos)(lista:List[Bit]):String =
+  def decodificarAux(tabla: TablaCodigos)(lista: List[Bit], buscado: List[Bit], caracteres:List[Char]): String = lista match
+    case Nil => listaCharsACadena(caracteres).reverse:+ caracterTabla(tabla)(buscado)
+    case head::tail => if estaEnLaTabla(tabla)(buscado.reverse) then decodificarAux(tabla)(lista, Nil, caracterTabla(tabla)(buscado.reverse)::caracteres)
+                        else decodificarAux(tabla)(tail, head::buscado ,caracteres)
+  decodificarAux(tabla)(lista,Nil,Nil)
+
+def estaEnLaTabla(tabla:TablaCodigos)(list:List[Bit]): Boolean =
+  if tabla == Nil then false
+  else if list!= tabla.head._2 then estaEnLaTabla(tabla.tail)(list) else true
+
+def caracterTabla(tabla: TablaCodigos)(list: List[Bit]): Char =
+  if list != tabla.head._2 then caracterTabla(tabla.tail)(list) else tabla.head._1
+
 
 object ArbolHuffman
   def apply(cadena: String):ArbolHuffman = crearArbolHuffman(cadena)
+
+
 
 
 
@@ -181,5 +224,21 @@ object miPrograma extends App{
   println("crearArbolHuffman")
 
   println(crearArbolHuffman(" sseeee     ttttttth"))
+  println(crearArbolHuffman("this is an example of huffman tree"))
 
+  println("\nde arbol a tabla")
+  println(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))
+
+  println("\n codificar con la tabla")
+  println(codificar(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))("set "))
+
+  println("\nesta en la tabla")
+  println(estaEnLaTabla(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))(List(0,0,1)))
+  println(estaEnLaTabla(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))(List(0, 0, 1,1)))
+
+  println("\ncaracter en la tabla")
+  println(caracterTabla(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))(List(0, 0, 1)))
+
+  println("\n decodificar con la tabla")
+  println(decodificar(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))(List(0,0,1,0,1,0,1,0,1,1,0,0,0)))
 }
