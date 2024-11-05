@@ -7,57 +7,48 @@ type TablaCodigos = List[(Char,List[Bit])]
 
 abstract class ArbolHuffman {
   def peso:Int = this match
-    case RamaHuffman(i,d) => i.peso + d.peso
-    case HojaHuffman(char, frec) => frec
+    case RamaHuffman(i,d) => i.peso + d.peso //caso Rama, el peso de la rama es el peso de las ramas/hojas que la componene
+    case HojaHuffman(char, frec) => frec // caso Hoja, devuelve el valor de la frecuencia
 
   def caracteres:List[Char] = this match
-    case RamaHuffman(i,d) => i.caracteres:::d.caracteres
-    case HojaHuffman(char, frec) => List(char)
+    case RamaHuffman(i,d) => i.caracteres:::d.caracteres //caso rama, donde se devuelven los caracteres de las hojas/ramas adyacentes
+    case HojaHuffman(char, frec) => List(char) // devuelve el caracter de la hoja en cuestion
 
   def decodificar(bits:List[Bit]):String =
     def decodificarAux(arbolAux:ArbolHuffman)(bits:List[Bit])(acum:List[Char]):List[Char] = bits match
-      case Nil => arbolAux match
-        case HojaHuffman(char, frec) => acum :+ char
-        case RamaHuffman(i,d) => acum
+      case Nil => arbolAux match // caso base donde la lista de bits se ha terminado de recorrer
+        case HojaHuffman(char, frec) => acum :+ char //devuelve lo ya acumulado junto con el caracter de la hoja en la que está
+        case RamaHuffman(i,d) => acum // devuelve el acumulado sin nada más porque las ramas no tienen caracter (estaria mal la codificacion)
 
-      case cabeza::cola => arbolAux match
-        case HojaHuffman(char, frec) => decodificarAux(this)(bits)(acum:+char)
-        case RamaHuffman(i,d) => decodificarAux(if (cabeza==0) then i else d)(cola)(acum)
+      case cabeza::cola => arbolAux match //caso recursivo
+        case HojaHuffman(char, frec) => decodificarAux(this)(bits)(acum:+char)// para reinciar el arbol se da el arbol con la raiz inicial,
+        // la lista y el acumulado sumado al caracter de la rama a la que ha llegado
+        case RamaHuffman(i,d) => decodificarAux(if (cabeza==0) then i else d)(cola)(acum) //con la rama se pone el subarbol izq o derecha
+    // dependiendo del siguiente bit, se quita la cabeza de la cola y no se suma al acumulado
 
-    listaCharsACadena(decodificarAux(this)(bits)(Nil))
+    listaCharsACadena(decodificarAux(this)(bits)(Nil))// llamada a auxiliar
 
   def caracterEnArbol(caracter: Char): Boolean =
     def caracterEnArbolAux(arbol:ArbolHuffman, caracter: Char):Boolean = arbol match
-      case HojaHuffman(char, frec) => char == caracter
-      case RamaHuffman(i, d) => caracterEnArbolAux(i,caracter) | caracterEnArbolAux(d,caracter)
+      case HojaHuffman(char, frec) => char == caracter//caso base donde el caracter es igual al introducido, retorna un boolean
+      case RamaHuffman(i, d) => caracterEnArbolAux(i,caracter) | caracterEnArbolAux(d,caracter)// caso recursivo donde se miran en ambos
+    // subarboles para comprobar si está el caracter en ellos, se aplica el operando or para que en el mometno que salga true, la funcion de true
     caracterEnArbolAux(this, caracter)
 
   def codificar(cadena: String): List[Bit]=
-    var lista: List[Char] = cadenaAListaChars(cadena)
+    var lista: List[Char] = cadenaAListaChars(cadena) // conversion de String a lista chars
     def codificarAux(arbol:ArbolHuffman, arbolAux: ArbolHuffman, listaChar: List[Char], accum: List[Bit]): List[Bit] = listaChar match
-      case Nil => accum.reverse
-      case cabeza :: cola => arbolAux match
-        case HojaHuffman(char, frec) => codificarAux(this,this, cola, accum)
-        case RamaHuffman(i,d) => if i.caracterEnArbol(cabeza) then codificarAux(this,i, listaChar, 0 :: accum)
-                                 else if d.caracterEnArbol(cabeza) then codificarAux(this,d, listaChar, 1 :: accum)
+      case Nil => accum.reverse // caso base donde la lista ya esté analizada
+      case cabeza :: cola => arbolAux match // caso recursivo, miramos el arbol
+        case HojaHuffman(char, frec) => codificarAux(this,this, cola, accum) //si es una hoja, se reincia el arbol, se quita la cabeza a la lista y se pone el acumulado tal cual
+        case RamaHuffman(i,d) => if i.caracterEnArbol(cabeza) then codificarAux(this,i, listaChar, 0 :: accum) //si el elemento se encuentra en el arbol de la izq, se mueve a la izquierda y se apunta un 0
+                                 else if d.caracterEnArbol(cabeza) then codificarAux(this,d, listaChar, 1 :: accum)//si el elemento se encuentra en el arbol de la derecha, se mueve a la derecha y se apunta un 1
                                  else throw new Error("El caracter no se encuentra en el arbol")
-
     codificarAux(this,this, lista, Nil)
-
-
-
-
-
-
-
 }
-case class RamaHuffman(izq:ArbolHuffman, der:ArbolHuffman) extends ArbolHuffman {
+case class RamaHuffman(izq:ArbolHuffman, der:ArbolHuffman) extends ArbolHuffman {} //case class donde el elemento del arbol es una rama
 
-}
-
-case class HojaHuffman(caracter:Char, frecuencia:Int) extends ArbolHuffman{
-
-}
+case class HojaHuffman(caracter:Char, frecuencia:Int) extends ArbolHuffman{} //case class donde el elemento del arbol es una hoja
 //CONSTRUCCIÓN DEL ÁLBOL
 
 
@@ -104,19 +95,16 @@ def combinar(nodos: List[ArbolHuffman]): List[ArbolHuffman] =
 
 
 
-def esListaSingleton (lista: List[ArbolHuffman]): Boolean = lista.length == 1
+def esListaSingleton (lista: List[ArbolHuffman]): Boolean = lista.length == 1 //comprueba que la longitud es 1
 
 
 def repetirHasta(accion: List[ArbolHuffman] => List[ArbolHuffman],condicion: List[ArbolHuffman] => Boolean): List[ArbolHuffman] => List[ArbolHuffman] = list =>
-  if(condicion(list)) list else repetirHasta(accion, condicion)(accion(list))
+  if(condicion(list)) list else repetirHasta(accion, condicion)(accion(list)) //si no se cumple la condición introducida se llama a la función recursivamente hasta que la cumpla
 
 def crearArbolHuffman(cadena:String): ArbolHuffman = repetirHasta(combinar,esListaSingleton)(distribFrecListaHojas(listaCharsADistFrec(cadenaAListaChars(cadena)))).head
+//esta función llama a la función repetirHasta()() cuya funcion es combinar la lista hasta que se cumpla la condición esListaSingleton, y la lista introducida es la cadena convertida en una lista ordenada por frecuencia ascendentemente
 
-/***
-def deArbolATabla(arbol: ArbolHuffman): TablaCodigos =
-  def deArbolATablaAux(arbol: ArbolHuffman, tabla: TablaCodigos): TablaCodigos = arbol match
-    case RamaHuffman(izq, der) => deArbolATablaAux(izq,tabla):::(deArbolATablaAux(der,tabla) )
-    case HojaHuffman(caracter, frecuencia) => tabla:::List[(caracter,frecuencia)]*/
+
 def deArbolATabla(arbol: ArbolHuffman): TablaCodigos =
   var lista: List[Char] = arbol.caracteres
   def deArbolATablaAux(arbol:ArbolHuffman, arbolAux: ArbolHuffman, tabla: TablaCodigos,listaChar:List[Char], accum: List[Bit]): TablaCodigos = listaChar match
