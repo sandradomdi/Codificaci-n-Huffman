@@ -49,47 +49,47 @@ abstract class ArbolHuffman {
 case class RamaHuffman(izq:ArbolHuffman, der:ArbolHuffman) extends ArbolHuffman {} //case class donde el elemento del arbol es una rama
 
 case class HojaHuffman(caracter:Char, frecuencia:Int) extends ArbolHuffman{} //case class donde el elemento del arbol es una hoja
+
+
 //CONSTRUCCIÓN DEL ÁLBOL
 
-
-def listaCharsADistFrec(listaChar: List[Char]): List[(Char,Int)] = //PROBLEMA EN listaAux2 match  case Nil => listaCharsADistFrecAux(listaAux.tail, POR PONER LISTAAUX.TAIL EL FINAL NO LO HACE BIEN
+def listaCharsADistFrec(listaChar: List[Char]): List[(Char,Int)] =
   def listaCharsADistFrecAux (listaAux:List[Char], listaAux2:List[Char], caracter:Char, frecuencia:Int, accum:List[(Char,Int)]): List[(Char,Int)] = listaAux match
-    case Nil => accum.toSet.toList //elimino los elementos repetidos
-    case List(x) => listaAux2 match
-      case Nil => ((caracter,frecuencia)::accum).toSet.toList
-      case cabeza1 :: cola1 => if cabeza1 == caracter then listaCharsADistFrecAux(listaAux, cola1, caracter, frecuencia+1, accum) //mantengo caracter y voy recorriendo la lista
-                             else listaCharsADistFrecAux(listaAux,cola1, caracter, frecuencia, accum)
+    case Nil => accum.toSet.toList //Con .toSet.toList elimino los elementos repetidos
+    case List(x) => listaAux2 match // Si la listaAux tiene un elemento estonces miro lo casos que puede tener listaAux2, este caso es necesio porque sino no se pasaría por el ultimo elemento de la listaAux
+      case Nil => ((caracter,frecuencia)::accum).toSet.toList// guardo el caracter con si freciencia en la lista acumuladora
+      case cabeza1 :: cola1 => if cabeza1 == caracter then listaCharsADistFrecAux(listaAux, cola1, caracter, frecuencia+1, accum) //mantengo caracter y voy recorriendo la lista si el caracter coincide con la cabeza de la listaAux2 sumo una unidad a la freciencia
+                             else listaCharsADistFrecAux(listaAux,cola1, caracter, frecuencia, accum)// si la cabeza de la listaAux2 no es igual al caracter no añado nada a la freciencia y vuelvo a llamar a la función
     case cabeza :: cola => listaAux2 match
       case Nil => listaCharsADistFrecAux(listaAux.tail, listaChar, cola.head, 0, (caracter,frecuencia)::accum) //cambio el caracter y guardo el caracter con su frecuencia anterior
-      case cabeza2 :: cola2 => if cabeza2 == caracter then listaCharsADistFrecAux(listaAux, cola2, caracter, frecuencia+1, accum) //mantengo caracter y voy recorriendo la lista
-                             else listaCharsADistFrecAux(listaAux,cola2, caracter, frecuencia, accum)
+      case cabeza2 :: cola2 => if cabeza2 == caracter then listaCharsADistFrecAux(listaAux, cola2, caracter, frecuencia+1, accum) //mantengo caracter y voy recorriendo la lista si el caracter coincide con la cabeza de la listaAux2 sumo una unidad a la freciencia
+                             else listaCharsADistFrecAux(listaAux,cola2, caracter, frecuencia, accum)// si la cabeza de la listaAux2 no es igual al caracter no añado nada a la freciencia y vuelvo a llamar a la función
 
   listaCharsADistFrecAux(listaChar,listaChar,listaChar.head,0,Nil)
 
-//Función hecha para despues poder ordenar las hojas de forma decreciente
-def cambiarAIntChar(listaCharInt: List[(Char, Int)]):List[(Int, Char)] =
-  def cambiarAIntCharAux(listaCharInt:List[(Char, Int)], listaIntChar: List[(Int, Char)]):List[(Int, Char)] = listaCharInt match
-    case Nil => listaIntChar
-    case cabeza :: cola => cambiarAIntCharAux(cola, (listaCharInt.head._2,listaCharInt.head._1)::listaIntChar)
 
-  cambiarAIntCharAux(listaCharInt, Nil)
 def distribFrecListaHojas(frec:List[(Char,Int)]):List[HojaHuffman] =
+  def cambiarAIntChar(listaCharInt: List[(Char, Int)]): List[(Int, Char)] = // esta funcion se utiliza para cambiar el orden de los elementos de la tupla y asi poder ordenar la lista según la frecuencia
+    def cambiarAIntCharAux(listaCharInt: List[(Char, Int)], listaIntChar: List[(Int, Char)]): List[(Int, Char)] = listaCharInt match
+      case Nil => listaIntChar
+      case cabeza :: cola => cambiarAIntCharAux(cola, (listaCharInt.head._2, listaCharInt.head._1) :: listaIntChar)//crea una lista que va introdiciendo una tupla cuyo primer elemento es el elemento dos de la tupla inicial y el segundo termino en el elemento uno de la tupla inicial
+    cambiarAIntCharAux(listaCharInt, Nil)
+
   val frecNuevo = cambiarAIntChar(frec) //Hecho para poder ordenar las hojas de forma decreciente segun sus frecuencias
   def distribFrecListaHojasAux(frec:List[(Int,Char)], listaHojas:List[HojaHuffman]):List[HojaHuffman] = frec match
     case Nil => listaHojas
-    case cabeza :: cola => distribFrecListaHojasAux(cola, HojaHuffman(frec.head._2,frec.head._1)::listaHojas)
-
-  distribFrecListaHojasAux(frecNuevo.sorted.reverse, Nil)//.sorted ordena la lista en función de las frecuencias de forma decreciente y lo cambiamos a creciente
+    case cabeza :: cola => distribFrecListaHojasAux(cola, HojaHuffman(frec.head._2,frec.head._1)::listaHojas)//la tupla de la lista frec pasa a ser una hoja introduciendo cada elemento de la tupla en el atributo correspondiente de la clase HojaHuffman
+  distribFrecListaHojasAux(frecNuevo.sorted.reverse, Nil)//.sorted ordena la lista en función de las frecuencias de forma decreciente y ponemos .reverse para ordenarlos de forma creciente
 
 //Funcion auxiliar para creación arbol codificado a partir de la lista de hojas
 def creaRamaHuff(izq: ArbolHuffman, dch:ArbolHuffman):RamaHuffman =
-  RamaHuffman(izq, dch)
+  RamaHuffman(izq, dch)// crea una rama con los parametros introducidos en la funcion
 
 def combinar(nodos: List[ArbolHuffman]): List[ArbolHuffman] =
   def combinarAux(nodos: List[ArbolHuffman], listaFinal:List[ArbolHuffman]): List[ArbolHuffman] = nodos match
     case Nil => listaFinal
-    case List(x) => (nodos.head :: listaFinal).reverse
-    case cabeza :: cola => combinarAux(nodos.tail.tail, creaRamaHuff(nodos.head, cola.head) :: listaFinal)
+    case List(x) => (nodos.head :: listaFinal).reverse // si la lista tiene un elemento añado es elemento a la listaFinal y pongo .reverse para que queden ordenados de forma creciente
+    case cabeza :: cola => combinarAux(nodos.tail.tail, creaRamaHuff(nodos.head, cola.head) :: listaFinal) // cojo los dos primeros elementos de la lista y los establezco como si fuesen una rama la cual se añade a la listaFinal
   combinarAux(nodos, Nil)
 
 
