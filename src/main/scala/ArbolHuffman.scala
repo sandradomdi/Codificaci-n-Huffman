@@ -17,6 +17,7 @@ abstract class ArbolHuffman {
     case HojaHuffman(char, frec) => List(char) // devuelve el caracter de la hoja en cuestion
 
   def decodificar(bits:List[Bit]):String =
+    @tailrec
     def decodificarAux(arbolAux:ArbolHuffman)(bits:List[Bit])(acum:List[Char]):List[Char] = bits match
       case Nil => arbolAux match // caso base donde la lista de bits se ha terminado de recorrer
         case HojaHuffman(char, frec) => acum :+ char //devuelve lo ya acumulado junto con el caracter de la hoja en la que está
@@ -25,7 +26,7 @@ abstract class ArbolHuffman {
       case cabeza::cola => arbolAux match //caso recursivo
         case HojaHuffman(char, frec) => decodificarAux(this)(bits)(acum:+char)// para reinciar el arbol se da el arbol con la raiz inicial,
         // la lista y el acumulado sumado al caracter de la rama a la que ha llegado
-        case RamaHuffman(i,d) => decodificarAux(if (cabeza==0) then i else d)(cola)(acum) //con la rama se pone el subarbol izq o derecha
+        case RamaHuffman(i,d) => decodificarAux(if cabeza==0 then i else d)(cola)(acum) //con la rama se pone el subarbol izq o derecha
     // dependiendo del siguiente bit, se quita la cabeza de la cola y no se suma al acumulado
 
     listaCharsACadena(decodificarAux(this)(bits)(Nil))// llamada a auxiliar
@@ -38,7 +39,8 @@ abstract class ArbolHuffman {
     caracterEnArbolAux(this, caracter)
 
   def codificar(cadena: String): List[Bit]=
-    var lista: List[Char] = cadenaAListaChars(cadena) // conversion de String a lista chars
+    val lista: List[Char] = cadenaAListaChars(cadena) // conversion de String a lista chars
+    @tailrec
     def codificarAux(arbol:ArbolHuffman, arbolAux: ArbolHuffman, listaChar: List[Char], accum: List[Bit]): List[Bit] = listaChar match
       case Nil => accum.reverse // caso base donde la lista ya esté analizada
       case cabeza :: cola => arbolAux match // caso recursivo, miramos el arbol
@@ -56,7 +58,8 @@ case class HojaHuffman(caracter:Char, frecuencia:Int) extends ArbolHuffman{} //c
 //CONSTRUCCIÓN DEL ÁLBOL
 
 def listaCharsADistFrec(listaChar: List[Char]): List[(Char,Int)] =
-  def listaCharsADistFrecAux (listaAux:List[Char], listaAux2:List[Char], caracter:Char, frecuencia:Int, accum:List[(Char,Int)]): List[(Char,Int)] = listaAux match
+  @tailrec
+  def listaCharsADistFrecAux(listaAux:List[Char], listaAux2:List[Char], caracter:Char, frecuencia:Int, accum:List[(Char,Int)]): List[(Char,Int)] = listaAux match
     case Nil => accum.toSet.toList //Con .toSet.toList elimino los elementos repetidos
     case List(x) => listaAux2 match // Si la listaAux tiene un elemento estonces miro lo casos que puede tener listaAux2, este caso es necesio porque sino no se pasaría por el ultimo elemento de la listaAux
       case Nil => ((caracter,frecuencia)::accum).toSet.toList// guardo el caracter con si freciencia en la lista acumuladora
@@ -72,12 +75,14 @@ def listaCharsADistFrec(listaChar: List[Char]): List[(Char,Int)] =
 
 def distribFrecListaHojas(frec:List[(Char,Int)]):List[HojaHuffman] =
   def cambiarAIntChar(listaCharInt: List[(Char, Int)]): List[(Int, Char)] = // esta funcion se utiliza para cambiar el orden de los elementos de la tupla y asi poder ordenar la lista según la frecuencia
+    @tailrec
     def cambiarAIntCharAux(listaCharInt: List[(Char, Int)], listaIntChar: List[(Int, Char)]): List[(Int, Char)] = listaCharInt match
       case Nil => listaIntChar
       case cabeza :: cola => cambiarAIntCharAux(cola, (listaCharInt.head._2, listaCharInt.head._1) :: listaIntChar)//crea una lista que va introdiciendo una tupla cuyo primer elemento es el elemento dos de la tupla inicial y el segundo termino en el elemento uno de la tupla inicial
     cambiarAIntCharAux(listaCharInt, Nil)
 
   val frecNuevo = cambiarAIntChar(frec) //Hecho para poder ordenar las hojas de forma decreciente segun sus frecuencias
+  @tailrec
   def distribFrecListaHojasAux(frec:List[(Int,Char)], listaHojas:List[HojaHuffman]):List[HojaHuffman] = frec match
     case Nil => listaHojas
     case cabeza :: cola => distribFrecListaHojasAux(cola, HojaHuffman(frec.head._2,frec.head._1)::listaHojas)//la tupla de la lista frec pasa a ser una hoja introduciendo cada elemento de la tupla en el atributo correspondiente de la clase HojaHuffman
@@ -87,12 +92,9 @@ def distribFrecListaHojas(frec:List[(Char,Int)]):List[HojaHuffman] =
 def creaRamaHuff(izq: ArbolHuffman, dch:ArbolHuffman):RamaHuffman =
   RamaHuffman(izq, dch)// crea una rama con los parametros introducidos en la funcion
 
-def combinar(nodos: List[ArbolHuffman]): List[ArbolHuffman] =
-  def combinarAux(nodos: List[ArbolHuffman], listaFinal:List[ArbolHuffman]): List[ArbolHuffman] = nodos match
-    case Nil => listaFinal
-    case List(x) => (nodos.head :: listaFinal).reverse // si la lista tiene un elemento añado es elemento a la listaFinal y pongo .reverse para que queden ordenados de forma creciente
-    case cabeza :: cola => combinarAux(nodos.tail.tail, creaRamaHuff(nodos.head, cola.head) :: listaFinal) // cojo los dos primeros elementos de la lista y los establezco como si fuesen una rama la cual se añade a la listaFinal
-  combinarAux(nodos, Nil)
+def combinar(nodos: List[ArbolHuffman]): List[ArbolHuffman] = nodos match
+  case primero::segundo::cola => (creaRamaHuff(primero,segundo)::cola).sortBy(_.peso)// se cogen el primer y segundo elemento de la lista formando una rama, esta se añade a la lista cola y por ultimo se ordena la lista en función del peso
+  case _ => nodos // cuando no hay primer y segundo elemento se devuelve la lista de nodos sin modificar
 
 
 
@@ -109,8 +111,9 @@ def crearArbolHuffman(cadena:String): ArbolHuffman = repetirHasta(combinar,esLis
 
 //CREACIÓN DE LA TABLA
 def deArbolATabla(arbol: ArbolHuffman): TablaCodigos =
-  var lista: List[Char] = arbol.caracteres // devuelve la lista de caracteres de albol
-  def deArbolATablaAux(arbol:ArbolHuffman, arbolAux: ArbolHuffman, tabla: TablaCodigos,listaChar:List[Char], accum: List[Bit]): TablaCodigos = listaChar match
+  val lista: List[Char] = arbol.caracteres // devuelve la lista de caracteres de albol
+  @tailrec
+  def deArbolATablaAux(arbol:ArbolHuffman, arbolAux: ArbolHuffman, tabla: TablaCodigos, listaChar:List[Char], accum: List[Bit]): TablaCodigos = listaChar match
     case Nil => tabla.reverse //cuando la listaChar es vacía se devuelve la tabla
     case cabeza :: cola => arbolAux match
       case HojaHuffman(char, frec) => deArbolATablaAux(arbol, arbol, (cabeza,accum.reverse)::tabla,cola, Nil)//si la cabeza es una hoja se añade su lista de bits y su caracter en la tabla
@@ -121,7 +124,8 @@ def deArbolATabla(arbol: ArbolHuffman): TablaCodigos =
 
 def codificar(tabla:TablaCodigos)(cadena:String): List[Bit]=
   val list: List[Char]= cadenaAListaChars(cadena) //Devuelve el string en una lista de caracteres
-  def codificarAux(tabla: TablaCodigos,tablaAux:TablaCodigos)(lista:List[Char],accum: List[Bit]):List[Bit]= lista match
+  @tailrec
+  def codificarAux(tabla: TablaCodigos, tablaAux:TablaCodigos)(lista:List[Char], accum: List[Bit]):List[Bit]= lista match
     case Nil => accum //Si la lista es nula entonces se devuelve accum que es la lista de bits de la codificación realizada
     case cabeza :: cola => tablaAux match //Gracias a este match se va a ir recorriendo cada tupla de la tabla
       case Nil => throw new Error("ese elemento no se encuentra en la tabla") // si la tabla es nulo es porque no se ha encontrado el caracter
@@ -130,16 +134,20 @@ def codificar(tabla:TablaCodigos)(cadena:String): List[Bit]=
   codificarAux(tabla, tabla)(list,Nil)
 
 def decodificar(tabla:TablaCodigos)(lista:List[Bit]):String =
+  @tailrec
   def decodificarAux(tabla: TablaCodigos)(lista: List[Bit], buscado: List[Bit], caracteres:List[Char]): String = lista match
-    case Nil => listaCharsACadena(caracteres).reverse:+ caracterTabla(tabla)(buscado.reverse)// si la lista es vacía entonces se devuelven los caracteres de la decodificación realizada
+    case Nil => if estaEnLaTabla(tabla)(buscado.reverse) then listaCharsACadena(caracteres).reverse:+ caracterTabla(tabla)(buscado.reverse)// si la lista es vacía entonces se mira si bucado esta en la lista, si es asi se añade a caracteres y se devuelve el string
+                else listaCharsACadena(caracteres)//si la lista de bits bucado no esta el la tabla se devuelven los caracteres de la decodificación
     case head::tail => if estaEnLaTabla(tabla)(buscado.reverse) then decodificarAux(tabla)(lista, Nil, caracterTabla(tabla)(buscado.reverse)::caracteres)// si la lista buscado de bits se encuentra en la tabla entonces se añade ese caracter a la decodificación
                         else decodificarAux(tabla)(tail, head::buscado ,caracteres)// si la lista de bits buscados no se encuentra en la tabla entonces se añade el siguiente bit de la lista de bits de codificación y se vuelve a llamar a la función
   decodificarAux(tabla)(lista,Nil,Nil)
 
+@tailrec
 def estaEnLaTabla(tabla:TablaCodigos)(list:List[Bit]): Boolean =
   if tabla == Nil then false // Si la tabla es nula, entonces la lista de bits no se encuentra en la tabla
   else if list!= tabla.head._2 then estaEnLaTabla(tabla.tail)(list) else true // si la lista de bits no coincide con la lista de la tabla entonces se llama otra vez a la función para ir recorriendo la tabla, pero si si coinciden entonces se devuelve true
 
+@tailrec
 def caracterTabla(tabla: TablaCodigos)(list: List[Bit]): Char =
   if list != tabla.head._2 then caracterTabla(tabla.tail)(list) else tabla.head._1 //Si la lista de bits no es como la lista de la tabla entonces se llama a la fuención para recorrer la tabla, pero si coinciden entonces se devuelve el caracter de la tabla
 
@@ -166,13 +174,17 @@ object miPrograma extends App{
   val rama7 = RamaHuffman(o, rama4)
   val rama11 = RamaHuffman(s, rama7)
   //Prueba funcion peso
+  println("\nprueba de la función peso")
   println (rama11.peso)
 
   //Prueba fucion caracteres
+  println("\nprueba de la función caracteres")
   println (rama11.caracteres)
 
   //Prueba funciones auxiliares
+  println("\nprueba de la función listaCharACadena")
   println(listaCharsACadena(List('a', 'b')))
+  println("\nprueba de la función cadenaAListaChars")
   println(cadenaAListaChars("soe "))
 
   //Prueba funcion decodificar
@@ -180,55 +192,72 @@ object miPrograma extends App{
   //sos ese oso
   val b: List[Bit] = List(0, 1, 0, 1, 1, 0, 1, 1, 1, 0)
   //soe s
+  println("\nprueba de la función decodificar")
   println(rama11.decodificar(bitList))
   println(rama11.decodificar(b))
 
+  println("\nprueba de la función caracter en arbol")
   // prueba de la funcion CaracterEnArbol
   println(rama11.caracterEnArbol('p'))
   println(rama11.caracterEnArbol('s'))
 
   //prueba de la funcion Codificar
+  println("\nprueba de la función codificar")
   println(rama11.codificar("sos ese oso"))
   println(rama11.codificar("soe s"))
 
-  val lista = List(1, 2, 3, 2, 4, 1, 5, 3,7)
-  val listaSinRepetidos = lista.toSet.toList
-  println(listaSinRepetidos)
 
   val listac = List('o','u',' ','o','u','o','o','i','a')
   val lista2 = List('o','i','u','u')
-  println("lista chars a dist frec")
+  println("\n prueba de la función listaCharsADistFrec")
   println(listaCharsADistFrec(lista2))
   println(listaCharsADistFrec(listac))
-  println("distrib frec list hojas")
+
+  println("\n prueba de la función distribFrecListHojas")
   println(distribFrecListaHojas(listaCharsADistFrec(listac)))
-  println("crea rama")
+
+  println("\n prueba de la función creaRama")
   println(creaRamaHuff(s,o))
-  println("combinar")
+
+  println("\n prueba de la función combinar")
   println(combinar(distribFrecListaHojas(listaCharsADistFrec(listac))))
-  println("es lista singleton")
+  println(combinar(combinar(distribFrecListaHojas(listaCharsADistFrec(listac)))))
+  println(combinar(combinar(combinar(distribFrecListaHojas(listaCharsADistFrec(listac))))))
+  println(combinar(combinar(combinar(combinar(distribFrecListaHojas(listaCharsADistFrec(listac)))))))
+  println(combinar(combinar(combinar(combinar(combinar(distribFrecListaHojas(listaCharsADistFrec(listac))))))))
+
+
+  println("\n prueba de la función esListaSingleton")
   println(esListaSingleton(List(s)))
   println(esListaSingleton(List()))
   println(esListaSingleton(List(s,o,e)))
 
-  println("crearArbolHuffman")
-
+  println("\n prueba de la función crearArbolHuffman")
   println(crearArbolHuffman(" sseeee     ttttttth"))
-  println(crearArbolHuffman("this is an example of huffman tree"))
+  val r = "aaaaabbbbbcccccdddddeeeeecdbbaaaaaaaaaaaaaaa"
+  println(crearArbolHuffman(r))
 
-  println("\nde arbol a tabla")
+  println("\nprueba de la función deArbolATabla")
   println(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))
+  println(deArbolATabla(crearArbolHuffman(r)))
 
-  println("\n codificar con la tabla")
+  println("\nprueba de la función codificar con la tabla")
   println(codificar(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))("set "))
+  println(codificar(deArbolATabla(crearArbolHuffman(r)))("decab"))
 
-  println("\nesta en la tabla")
-  println(estaEnLaTabla(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))(List(0,0,1)))
-  println(estaEnLaTabla(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))(List(0, 0, 1,1)))
 
-  println("\ncaracter en la tabla")
-  println(caracterTabla(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))(List(0, 0, 1)))
+  println("\nprueba de la función estaEnLaTabla")
+  println(estaEnLaTabla(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))(List(1,0)))
+  println(estaEnLaTabla(deArbolATabla(crearArbolHuffman(r)))(List(1, 1, 0, 0)))
 
-  println("\n decodificar con la tabla")
-  println(decodificar(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))(List(0,0,1,0,1,0,1,0,1,1,0,0,0)))
+  println("\nprueba de la función caracterEnLaTabla")
+  println(caracterTabla(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))(List(1, 1, 1)))
+  println(caracterTabla(deArbolATabla(crearArbolHuffman(r)))(List(1, 1, 0)))
+
+  println("\nprueba de la función decodificar con la tabla")
+  println(decodificar(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))(List(1,1,0,1,1,1,1,0,1,0)))
+  println(decodificar(deArbolATabla(crearArbolHuffman(r)))(List(0,1,0,1,1,0,0,1,1,1,1,1,0)))
+
+
+
 }
