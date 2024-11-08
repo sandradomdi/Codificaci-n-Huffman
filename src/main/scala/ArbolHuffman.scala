@@ -1,3 +1,5 @@
+import scala.annotation.tailrec
+
 type Bit = 0 | 1
 def cadenaAListaChars(cadena: String): List[Char] = cadena.toList
 def listaCharsACadena(listaCar: List[Char]): String = listaCar.mkString
@@ -85,9 +87,12 @@ def distribFrecListaHojas(frec:List[(Char,Int)]):List[HojaHuffman] =
 def creaRamaHuff(izq: ArbolHuffman, dch:ArbolHuffman):RamaHuffman =
   RamaHuffman(izq, dch)// crea una rama con los parametros introducidos en la funcion
 
-def combinar(nodos: List[ArbolHuffman]): List[ArbolHuffman] = nodos match
-  case primero::segundo::cola => (creaRamaHuff(primero,segundo)::cola).sortBy(_.peso)// se cogen el primer y segundo elemento de la lista formando una rama, esta se añade a la lista cola y por ultimo se ordena la lista en función del peso
-  case _ => nodos // cuando no hay primer y segundo elemento se devuelve la lista de nodos sin modificar
+def combinar(nodos: List[ArbolHuffman]): List[ArbolHuffman] =
+  def combinarAux(nodos: List[ArbolHuffman], listaFinal:List[ArbolHuffman]): List[ArbolHuffman] = nodos match
+    case Nil => listaFinal
+    case List(x) => (nodos.head :: listaFinal).reverse // si la lista tiene un elemento añado es elemento a la listaFinal y pongo .reverse para que queden ordenados de forma creciente
+    case cabeza :: cola => combinarAux(nodos.tail.tail, creaRamaHuff(nodos.head, cola.head) :: listaFinal) // cojo los dos primeros elementos de la lista y los establezco como si fuesen una rama la cual se añade a la listaFinal
+  combinarAux(nodos, Nil)
 
 
 
@@ -161,17 +166,13 @@ object miPrograma extends App{
   val rama7 = RamaHuffman(o, rama4)
   val rama11 = RamaHuffman(s, rama7)
   //Prueba funcion peso
-  println("\nprueba de la función peso")
   println (rama11.peso)
 
   //Prueba fucion caracteres
-  println("\nprueba de la función caracteres")
   println (rama11.caracteres)
 
   //Prueba funciones auxiliares
-  println("\nprueba de la función listaCharACadena")
   println(listaCharsACadena(List('a', 'b')))
-  println("\nprueba de la función cadenaAListaChars")
   println(cadenaAListaChars("soe "))
 
   //Prueba funcion decodificar
@@ -179,72 +180,55 @@ object miPrograma extends App{
   //sos ese oso
   val b: List[Bit] = List(0, 1, 0, 1, 1, 0, 1, 1, 1, 0)
   //soe s
-  println("\nprueba de la función decodificar")
   println(rama11.decodificar(bitList))
   println(rama11.decodificar(b))
 
-  println("\nprueba de la función caracter en arbol")
   // prueba de la funcion CaracterEnArbol
   println(rama11.caracterEnArbol('p'))
   println(rama11.caracterEnArbol('s'))
 
   //prueba de la funcion Codificar
-  println("\nprueba de la función codificar")
   println(rama11.codificar("sos ese oso"))
   println(rama11.codificar("soe s"))
 
+  val lista = List(1, 2, 3, 2, 4, 1, 5, 3,7)
+  val listaSinRepetidos = lista.toSet.toList
+  println(listaSinRepetidos)
 
   val listac = List('o','u',' ','o','u','o','o','i','a')
   val lista2 = List('o','i','u','u')
-  println("\n prueba de la función listaCharsADistFrec")
+  println("lista chars a dist frec")
   println(listaCharsADistFrec(lista2))
   println(listaCharsADistFrec(listac))
-
-  println("\n prueba de la función distribFrecListHojas")
+  println("distrib frec list hojas")
   println(distribFrecListaHojas(listaCharsADistFrec(listac)))
-
-  println("\n prueba de la función creaRama")
+  println("crea rama")
   println(creaRamaHuff(s,o))
-
-  println("\n prueba de la función combinar")
+  println("combinar")
   println(combinar(distribFrecListaHojas(listaCharsADistFrec(listac))))
-  println(combinar(combinar(distribFrecListaHojas(listaCharsADistFrec(listac)))))
-  println(combinar(combinar(combinar(distribFrecListaHojas(listaCharsADistFrec(listac))))))
-  println(combinar(combinar(combinar(combinar(distribFrecListaHojas(listaCharsADistFrec(listac)))))))
-  println(combinar(combinar(combinar(combinar(combinar(distribFrecListaHojas(listaCharsADistFrec(listac))))))))
-
-
-  println("\n prueba de la función esListaSingleton")
+  println("es lista singleton")
   println(esListaSingleton(List(s)))
   println(esListaSingleton(List()))
   println(esListaSingleton(List(s,o,e)))
 
-  println("\n prueba de la función crearArbolHuffman")
+  println("crearArbolHuffman")
+
   println(crearArbolHuffman(" sseeee     ttttttth"))
-  val r = "aaaaabbbbbcccccdddddeeeeecdbbaaaaaaaaaaaaaaa"
-  println(crearArbolHuffman(r))
+  println(crearArbolHuffman("this is an example of huffman tree"))
 
-  println("\nprueba de la función deArbolATabla")
+  println("\nde arbol a tabla")
   println(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))
-  println(deArbolATabla(crearArbolHuffman(r)))
 
-  println("\nprueba de la función codificar con la tabla")
+  println("\n codificar con la tabla")
   println(codificar(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))("set "))
-  println(codificar(deArbolATabla(crearArbolHuffman(r)))("decab"))
 
+  println("\nesta en la tabla")
+  println(estaEnLaTabla(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))(List(0,0,1)))
+  println(estaEnLaTabla(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))(List(0, 0, 1,1)))
 
-  println("\nprueba de la función estaEnLaTabla")
-  println(estaEnLaTabla(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))(List(1,0)))
-  println(estaEnLaTabla(deArbolATabla(crearArbolHuffman(r)))(List(1, 1, 0, 0)))
+  println("\ncaracter en la tabla")
+  println(caracterTabla(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))(List(0, 0, 1)))
 
-  println("\nprueba de la función caracterEnLaTabla")
-  println(caracterTabla(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))(List(1, 1, 1)))
-  println(caracterTabla(deArbolATabla(crearArbolHuffman(r)))(List(1, 1, 0)))
-
-  println("\nprueba de la función decodificar con la tabla")
-  println(decodificar(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))(List(1,1,0,1,1,1,1,0,1,0)))
-  println(decodificar(deArbolATabla(crearArbolHuffman(r)))(List(0,1,0,1,1,0,0,1,1,1,1,1,0)))
-
-
-
+  println("\n decodificar con la tabla")
+  println(decodificar(deArbolATabla(crearArbolHuffman(" sseeee     ttttttth")))(List(0,0,1,0,1,0,1,0,1,1,0,0,0)))
 }
